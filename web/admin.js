@@ -50,7 +50,7 @@ async function boot() {
 
 async function loadEntries() {
   const { data, error } = await sb.from('entries')
-    .select('id,no,sort_key,adults,kids,phone,source,status,canceled_by,created_at,called_at,call_count,done_at,postponed')
+    .select('id,no,sort_key,adults,kids,phone,source,status,canceled_by,created_at,called_at,call_count,done_at')
     .eq('day', kstDate())
     .order('sort_key');
   if (error) throw error;
@@ -205,7 +205,6 @@ function activeHtml() {
           <span>${fmtTime(e.created_at)} 접수 · <b>${minsSince(e.created_at)}분</b> 대기</span>
           ${e.status === 'called' ? `<span class="called-badge">${overdue ? `호출 후 ${minsSince(e.called_at)}분 · 미도착` : `호출 ${e.call_count}회 · ${minsSince(e.called_at)}분 전`}</span>` : ''}
           ${e.kids ? `<span>어린이 ${e.kids}</span>` : ''}
-          ${e.postponed ? '<span class="chip">순서 미룸</span>' : ''}
           ${e.source === 'staff' ? '<span class="chip">직원 등록</span>' : ''}
           ${smsBadge(e)}
         </div>
@@ -376,7 +375,7 @@ async function downloadCsv() {
   const rows = [];
   for (let page = 0; ; page++) {
     const { data, error } = await sb.from('entries')
-      .select('day,no,adults,kids,source,status,canceled_by,created_at,called_at,done_at,call_count,postponed')
+      .select('day,no,adults,kids,source,status,canceled_by,created_at,called_at,done_at,call_count')
       .gte('day', from).lte('day', to)
       .order('day').order('no')
       .range(page * 1000, page * 1000 + 999);
@@ -385,14 +384,14 @@ async function downloadCsv() {
     if (data.length < 1000) break;
   }
   const t = ts => (ts ? new Date(ts).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }) : '');
-  const head = ['날짜', '번호', '성인', '어린이', '인원', '접수경로', '결과', '접수시각', '호출시각', '처리시각', '대기(분)', '호출횟수', '순서미룸'];
+  const head = ['날짜', '번호', '성인', '어린이', '인원', '접수경로', '결과', '접수시각', '호출시각', '처리시각', '대기(분)', '호출횟수'];
   const lines = rows.map(r => [
     r.day, r.no, r.adults, r.kids, r.adults + r.kids,
     r.source === 'staff' ? '직원' : '태블릿',
     r.status === 'canceled' && r.canceled_by === 'customer' ? '손님 취소' : (STATUS_LABEL[r.status] || r.status),
     t(r.created_at), t(r.called_at), t(r.done_at),
     r.done_at ? Math.round((new Date(r.done_at) - new Date(r.created_at)) / 60000) : '',
-    r.call_count, r.postponed,
+    r.call_count,
   ].join(','));
   const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
@@ -451,6 +450,7 @@ function settingsHtml() {
           </select>
         </label>
         <label class="field field-wide"><span>사이트 주소 (순서 확인 링크에 들어감)</span><input name="site_url" inputmode="url" value="${esc(s.site_url || location.origin)}"><small>지금 이 화면의 주소가 기본값입니다. 도메인을 바꾸면 여기도 바꿔 주세요.</small></label>
+        <label class="field field-wide"><span>메뉴판 주소 (선택)</span><input name="menu_url" inputmode="url" value="${esc(s.menu_url || '')}" placeholder="https://"><small>손님의 순서 확인 화면에 '메뉴 미리 보기' 버튼으로 나옵니다. 비워 두면 버튼이 숨겨집니다. 문자에는 들어가지 않아 문자비가 늘지 않습니다.</small></label>
         ${tplField('tpl_register', '접수 완료 문자', '사용 가능: {매장} {번호} {인원} {앞팀} {링크} {제한분} — 바이트는 예시 값으로 계산합니다.')}
         ${tplField('tpl_soon', '곧 차례 문자')}
         ${tplField('tpl_call', '입장 호출 문자')}
@@ -709,10 +709,12 @@ document.addEventListener('submit', async ev => {
       sms_from: String(f.get('sms_from')).replace(/\D/g, ''),
       soon_count: num('soon_count', 0, 5),
       site_url: String(f.get('site_url')).trim().replace(/\/$/, ''),
+      menu_url: String(f.get('menu_url')).trim(),
       tpl_register: String(f.get('tpl_register')),
       tpl_soon: String(f.get('tpl_soon')),
       tpl_call: String(f.get('tpl_call')),
     };
+    if (patch.menu_url && !/^https?:\/\//.test(patch.menu_url)) { toast('메뉴판 주소는 https:// 로 시작해야 합니다', 'error'); return; }
     if (patch.sms_enabled && !patch.sms_from) { toast('문자를 켜려면 발신번호를 입력해 주세요', 'error'); return; }
     const { data, error } = await sb.from('settings').update(patch).eq('id', 1).select();
     if (error || !data?.length) { toast(error ? friendlyError(error) : '저장 권한이 없습니다', 'error'); return; }

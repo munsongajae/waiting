@@ -49,6 +49,8 @@ create table if not exists public.settings (
   tpl_call         text not null default '[{매장}] {번호}번 입장하실 차례입니다. {제한분}분 내 입구로 와주세요.'
 );
 insert into public.settings (id) values (1) on conflict (id) do nothing;
+-- 나중에 추가된 설정 (이미 설치된 DB에도 적용되도록 따로 추가)
+alter table public.settings add column if not exists menu_url text not null default ''; -- 손님 순서 확인 화면의 '메뉴 미리 보기' 링크
 
 create table if not exists private.secrets (
   id            int primary key default 1 check (id = 1),
@@ -66,7 +68,7 @@ create table if not exists public.entries (
   id          uuid primary key default gen_random_uuid(),
   day         date not null default private.kst_today(),
   no          int  not null,
-  sort_key    double precision not null,  -- 대기 순서 ('순서 미루기' 때문에 번호와 다를 수 있음)
+  sort_key    double precision not null,  -- 대기 순서 (지금은 번호와 같음, 순서 조정 기능을 위해 분리해 둠)
   adults      int  not null check (adults between 1 and 30),
   kids        int  not null default 0 check (kids between 0 and 30),
   phone       text,
@@ -667,9 +669,7 @@ begin
     'ahead', n_ahead,
     'est_minutes', case when active then n_ahead * private.minutes_per_team() end,
     'noshow_minutes', s.noshow_minutes,
-    'can_postpone', e.status = 'waiting' and e.postponed < 2 and exists (
-      select 1 from public.entries x
-       where x.day = e.day and x.status = 'waiting' and x.sort_key > e.sort_key)
+    'menu_url', nullif(s.menu_url, '')
   );
 end $$;
 
@@ -688,35 +688,8 @@ begin
   return true;
 end $$;
 
--- 바로 뒤 대기 팀과 순서를 바꿈 (최대 2번)
-create or replace function public.customer_postpone(p_token text) returns boolean
-language plpgsql security definer set search_path = '' as $$
-declare
-  e public.entries;
-  k1 double precision;
-  k2 double precision;
-begin
-  if coalesce(length(p_token), 0) < 8 then return false; end if;
-  select * into e from public.entries
-   where token = p_token and day = private.kst_today() for update;
-  if not found or e.status <> 'waiting' or e.postponed >= 2 then return false; end if;
-
-  select sort_key into k1 from public.entries
-   where day = e.day and status = 'waiting' and sort_key > e.sort_key
-   order by sort_key limit 1;
-  if k1 is null then return false; end if;
-  select sort_key into k2 from public.entries
-   where day = e.day and status in ('waiting', 'called') and sort_key > k1
-   order by sort_key limit 1;
-
-  -- 새 순서값은 항상 다음 정수보다 작게 유지 (앞으로 접수될 번호와 겹치지 않도록)
-  update public.entries
-     set sort_key = case when k2 is null then (k1 + floor(k1) + 1) / 2 else (k1 + k2) / 2 end,
-         postponed = postponed + 1
-   where id = e.id;
-  perform private.check_soon(e.day);
-  return true;
-end $$;
+-- '순서 미루기'는 운영 방침상 제거 (이전 버전으로 설치된 DB에서도 삭제)
+drop function if exists public.customer_postpone(text);
 
 
 -- ---------------------------------------------------------
@@ -743,8 +716,7 @@ to authenticated;
 
 grant execute on function
   public.entry_status(text),
-  public.customer_cancel(text),
-  public.customer_postpone(text)
+  public.customer_cancel(text)
 to anon, authenticated;
 
 

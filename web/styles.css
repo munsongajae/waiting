@@ -49,7 +49,7 @@ button:disabled { cursor: default; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 52px; padding: 0 22px; border-radius: 14px;
-  font-size: 18px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap;
+  font-size: 18px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; text-decoration: none;
   transition: transform .08s ease, background .15s ease, opacity .15s ease;
 }
 .btn:active:not(:disabled) { transform: scale(.97); }
