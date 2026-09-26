@@ -115,8 +115,11 @@ function modal({ title, message, body, buttons }) {
       if (!b) return;
       const form = root.querySelector('.modal');
       const value = buttons[Number(b.dataset.modal)].value;
-      const result = typeof value === 'function' ? value(form) : value;
-      if (result === false) return; // 입력 검증 실패 시 모달 유지
+      let result = value;
+      if (typeof value === 'function') {
+        result = value(form);
+        if (result === false) return; // 입력 검증 실패 시 모달 유지 (함수 버튼에만 해당)
+      }
       root.innerHTML = '';
       root.onclick = null;
       resolve(result);
