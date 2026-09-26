@@ -47,6 +47,7 @@ function render() {
         ${i.ahead ? `내 앞에 <b>${i.ahead}</b>팀` : '<b>다음 차례</b>입니다'}
       </div>
       <p class="status-sub">${i.ahead ? `예상 대기 약 <b>${i.est_minutes}</b>분 · ` : ''}차례가 되면 문자로 알려드립니다</p>
+      ${i.ahead ? `<p class="est-note">${EST_NOTE}</p>` : ''}
       <div class="status-actions">
         ${i.can_postpone ? '<button class="btn btn-outline btn-lg" data-action="postpone">순서 한 칸 미루기</button>' : ''}
         <button class="btn btn-ghost btn-lg" data-action="cancel">웨이팅 취소</button>

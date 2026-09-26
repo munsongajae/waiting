@@ -130,6 +130,9 @@ button:disabled { cursor: default; }
 }
 .btn-hero:active { transform: scale(.98); }
 @keyframes breathe { 50% { box-shadow: 0 16px 44px rgba(107, 79, 42, .45); } }
+.est-note { text-align: center; color: var(--muted); font-size: 16px; margin: -6px 0 0; }
+.status-card .est-note { font-size: 13px; margin: 0; }
+.done .est-note { font-size: 18px; margin: 0; }
 .hint { text-align: center; color: var(--muted); font-size: 18px; margin: 0; }
 .paused-box {
   background: var(--amber-bg); color: var(--amber-ink); border-radius: var(--radius);

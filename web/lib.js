@@ -6,6 +6,8 @@ const CFG = window.WAITING_CONFIG || {};
 const IS_CONFIGURED = !!CFG.supabaseUrl && !CFG.supabaseUrl.includes('YOUR_') && !!window.supabase;
 const sb = IS_CONFIGURED ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey) : null;
 
+const EST_NOTE = '예상 시간은 참고용이며, 매장 상황에 따라 달라질 수 있습니다.';
+
 /* ---------- 형식 ---------- */
 
 function pad(n) { return String(n).padStart(2, '0'); }

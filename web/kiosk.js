@@ -136,6 +136,7 @@ function viewHome() {
           <span class="value">${s.waiting ? `약 <b>${s.est_minutes}</b>분` : '<b>바로</b> 입장'}</span>
         </div>
       </div>
+      ${s.waiting ? `<p class="est-note">${EST_NOTE}</p>` : ''}
       ${action}
     </section>
   </main>`;
@@ -237,6 +238,7 @@ function viewDone() {
     <p class="done-label">웨이팅 접수 완료</p>
     <div class="done-no"><b>${r.no}</b><span>번</span></div>
     <p class="done-meta">앞 대기 <b>${r.ahead}</b>팀 · ${r.ahead ? `예상 약 <b>${r.est_minutes}</b>분` : '곧 입장'}</p>
+    ${r.ahead ? `<p class="est-note">${EST_NOTE}</p>` : ''}
     <p class="done-notice">${notice}</p>
     <button class="btn btn-primary btn-lg">확인 <small>(<span id="done-left">${ui.doneLeft}</span>)</small></button>
   </main>`;
