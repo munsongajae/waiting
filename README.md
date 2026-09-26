@@ -5,7 +5,8 @@
 
 ```
 web/        태블릿·휴대폰에서 여는 화면 (이 폴더를 배포)
-  index.html    입구 태블릿 — 손님 접수
+  index.html    첫 주소 안내 화면 (접수는 입구 태블릿에서 하라는 안내만)
+  kiosk.html    입구 태블릿 — 손님 접수 (/kiosk)
   admin.html    관리자 — 카운터 태블릿(직원), 사장님 휴대폰/PC
   s.html        손님 휴대폰 — 문자 링크로 여는 '내 순서 확인'
   config.js     Supabase 연결 정보 (설치할 때 채움)
@@ -86,13 +87,13 @@ server.js     PC에서 미리 보기용 로컬 서버 (node server.js)
 
 이후에는 GitHub에 올릴 때마다 자동으로 다시 배포됩니다.
 
-`web/_redirects` 덕분에 `주소/admin` 은 관리자 화면, `주소/s/…` 는 손님 확인 화면으로 열립니다.
+`web/_redirects` 덕분에 `주소/kiosk` 는 입구 태블릿, `주소/admin` 은 관리자 화면, `주소/s/…` 는 손님 확인 화면으로 열립니다. 첫 주소(`주소/`)에는 로그인 창 없이 안내 문구만 보입니다.
 
 ### 6. 기기 준비
 
 | 기기 | 여는 주소 | 로그인 계정 |
 | --- | --- | --- |
-| 입구 태블릿 | `https://이름.netlify.app` | 입구 태블릿 계정 |
+| 입구 태블릿 | `https://이름.netlify.app/kiosk` | 입구 태블릿 계정 |
 | 카운터 태블릿 | `https://이름.netlify.app/admin` | 카운터 계정 |
 | 사장님 휴대폰 | `https://이름.netlify.app/admin` | 사장님 계정 |
 
@@ -130,4 +131,4 @@ server.js     PC에서 미리 보기용 로컬 서버 (node server.js)
 node server.js
 ```
 
-http://localhost:8080 (입구), http://localhost:8080/admin (관리자). `web/config.js` 에 Supabase 정보가 있어야 동작합니다.
+http://localhost:8080/kiosk (입구), http://localhost:8080/admin (관리자). `web/config.js` 에 Supabase 정보가 있어야 동작합니다.

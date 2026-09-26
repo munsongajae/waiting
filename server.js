@@ -17,6 +17,7 @@ const TYPES = {
 // 배포용 _redirects 와 같은 규칙
 function resolve(urlPath) {
   if (urlPath === '/') return 'index.html';
+  if (urlPath === '/kiosk') return 'kiosk.html';
   if (urlPath === '/admin') return 'admin.html';
   if (urlPath.startsWith('/s/')) return 's.html';
   return urlPath;

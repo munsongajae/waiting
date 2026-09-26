@@ -1,7 +1,7 @@
 {
   "name": "그리운보리밥 웨이팅",
   "short_name": "웨이팅",
-  "start_url": "/",
+  "start_url": "/kiosk",
   "scope": "/",
   "display": "fullscreen",
   "orientation": "any",
