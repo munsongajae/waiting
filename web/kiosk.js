@@ -237,7 +237,7 @@ function viewDone() {
   <main class="screen done" data-action="home">
     <p class="done-label">웨이팅 접수 완료</p>
     <div class="done-no"><b>${r.no}</b><span>번</span></div>
-    <p class="done-meta">앞 대기 <b>${r.ahead}</b>팀 · ${r.ahead ? `예상 약 <b>${r.est_minutes}</b>분` : '곧 입장'}</p>
+    <p class="done-meta">앞 대기 <b>${r.ahead}</b>팀 · ${r.ahead ? `예상 약 <b>${r.est_minutes}</b>분` : '다음 차례'}</p>
     ${r.ahead ? `<p class="est-note">${EST_NOTE}</p>` : ''}
     <p class="done-notice">${notice}</p>
     <button class="btn btn-primary btn-lg">확인 <small>(<span id="done-left">${ui.doneLeft}</span>)</small></button>

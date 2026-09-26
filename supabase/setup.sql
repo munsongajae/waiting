@@ -43,14 +43,16 @@ create table if not exists public.settings (
   sms_enabled      boolean not null default false,
   sms_from         text not null default '',
   site_url         text not null default '',     -- 순서 확인 링크에 쓰는 사이트 주소
-  soon_count       int  not null default 0,      -- 앞 대기가 N팀 이하일 때 '곧 차례' 문자 (0 = 안 보냄)
+  soon_count       int  not null default 0,      -- 앞 대기가 N팀 이하일 때 '앞 대기 알림' 문자 (0 = 안 보냄)
   tpl_register     text not null default E'[{매장}] {번호}번 접수 (앞 {앞팀}팀)\n순서확인 {링크}',
-  tpl_soon         text not null default '[{매장}] {번호}번 곧 입장 차례입니다. 매장 앞으로 와주세요.',
+  tpl_soon         text not null default '[{매장}] {번호}번 고객님, 앞 대기 {앞팀}팀 남았습니다. 차례가 되면 다시 알려드릴게요.',
   tpl_call         text not null default '[{매장}] {번호}번 입장하실 차례입니다. {제한분}분 내 입구로 와주세요.'
 );
 insert into public.settings (id) values (1) on conflict (id) do nothing;
 -- 나중에 추가된 설정 (이미 설치된 DB에도 적용되도록 따로 추가)
 alter table public.settings add column if not exists menu_url text not null default ''; -- 손님 순서 확인 화면의 '메뉴 미리 보기' 링크
+-- '곧 입장 차례' 문구를 중립적인 '앞 대기 N팀' 문구로 변경 (사장님이 직접 고친 문구는 그대로 둠)
+update public.settings set tpl_soon = '[{매장}] {번호}번 고객님, 앞 대기 {앞팀}팀 남았습니다. 차례가 되면 다시 알려드릴게요.' where tpl_soon = '[{매장}] {번호}번 곧 입장 차례입니다. 매장 앞으로 와주세요.';
 
 create table if not exists private.secrets (
   id            int primary key default 1 check (id = 1),
@@ -314,7 +316,7 @@ begin
   end;
 end $$;
 
--- 앞 대기가 N팀 이하로 줄어든 손님에게 '곧 차례' 문자
+-- 앞 대기가 N팀 이하로 줄어든 손님에게 '앞 대기 알림' 문자
 create or replace function private.check_soon(p_day date) returns void
 language plpgsql set search_path = '' as $$
 declare
@@ -430,7 +432,7 @@ begin
 
   select * into s from public.settings where id = 1;
   n_ahead := private.ahead(d, e.sort_key);
-  -- 접수 문자에 앞 팀 수가 이미 들어가므로, 처음부터 조건을 만족하면 '곧 차례' 문자는 생략
+  -- 접수 문자에 앞 팀 수가 이미 들어가므로, 처음부터 조건을 만족하면 '앞 대기 알림' 문자는 생략
   if s.soon_count > 0 and n_ahead <= s.soon_count then
     update public.entries set soon_sent = true where id = e.id;
   end if;
