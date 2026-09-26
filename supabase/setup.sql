@@ -261,8 +261,11 @@ declare
 begin
   select * into s from public.settings where id = 1;
   select * into k from private.secrets where id = 1;
-  if coalesce(k.solapi_key, '') = '' or coalesce(k.solapi_secret, '') = '' or s.sms_from = '' then
-    raise exception '문자 설정(API 키·시크릿·발신번호)이 비어 있습니다';
+  if coalesce(k.solapi_key, '') = '' or coalesce(k.solapi_secret, '') = '' then
+    raise exception '솔라피 API 키가 저장되어 있지 않습니다';
+  end if;
+  if s.sms_from = '' then
+    raise exception '발신번호가 비어 있습니다. 문자 알림의 발신번호를 입력하고 설정 저장을 눌러 주세요';
   end if;
   d := to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"');
   salt := encode(extensions.gen_random_bytes(16), 'hex');
