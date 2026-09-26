@@ -1,0 +1,10 @@
+# Netlify 배포 설정: web 폴더만 배포 (빌드 과정 없음)
+[build]
+  publish = "web"
+
+# 앱 파일은 항상 최신 버전을 받도록
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+    X-Robots-Tag = "noindex, nofollow"
