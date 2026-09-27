@@ -43,16 +43,27 @@ create table if not exists public.settings (
   sms_enabled      boolean not null default false,
   sms_from         text not null default '',
   site_url         text not null default '',     -- 순서 확인 링크에 쓰는 사이트 주소
-  soon_count       int  not null default 0,      -- 앞 대기가 N팀 이하일 때 '앞 대기 알림' 문자 (0 = 안 보냄)
+  soon_at          int check (soon_at between 0 and 5), -- 앞 대기가 N팀 이하일 때 '앞 대기 알림' 문자 (0 = 다음 차례일 때, null = 안 보냄)
   tpl_register     text not null default E'[{매장}] {번호}번 접수 (앞 {앞팀}팀)\n순서확인 {링크}',
-  tpl_soon         text not null default '[{매장}] {번호}번 고객님, 앞 대기 {앞팀}팀 남았습니다. 차례가 되면 다시 알려드릴게요.',
+  tpl_soon         text not null default '[{매장}] {번호}번 고객님, {순서안내}. 차례가 되면 다시 알려드릴게요.',
   tpl_call         text not null default '[{매장}] {번호}번 입장하실 차례입니다. {제한분}분 내 입구로 와주세요.'
 );
 insert into public.settings (id) values (1) on conflict (id) do nothing;
 -- 나중에 추가된 설정 (이미 설치된 DB에도 적용되도록 따로 추가)
 alter table public.settings add column if not exists menu_url text not null default ''; -- 손님 순서 확인 화면의 '메뉴 미리 보기' 링크
--- '곧 입장 차례' 문구를 중립적인 '앞 대기 N팀' 문구로 변경 (사장님이 직접 고친 문구는 그대로 둠)
-update public.settings set tpl_soon = '[{매장}] {번호}번 고객님, 앞 대기 {앞팀}팀 남았습니다. 차례가 되면 다시 알려드릴게요.' where tpl_soon = '[{매장}] {번호}번 곧 입장 차례입니다. 매장 앞으로 와주세요.';
+-- 예전 기본 문구는 새 기본 문구로 변경 (사장님이 직접 고친 문구는 그대로 둠)
+alter table public.settings alter column tpl_soon set default '[{매장}] {번호}번 고객님, {순서안내}. 차례가 되면 다시 알려드릴게요.';
+update public.settings set tpl_soon = '[{매장}] {번호}번 고객님, {순서안내}. 차례가 되면 다시 알려드릴게요.' where tpl_soon in ('[{매장}] {번호}번 곧 입장 차례입니다. 매장 앞으로 와주세요.', '[{매장}] {번호}번 고객님, 앞 대기 {앞팀}팀 남았습니다. 차례가 되면 다시 알려드릴게요.');
+-- 앞 대기 알림 시점: 예전 soon_count(0 = 안 보냄)를 soon_at(null = 안 보냄, 0 = 다음 차례)으로 옮김
+alter table public.settings add column if not exists soon_at int check (soon_at between 0 and 5);
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'settings' and column_name = 'soon_count') then
+    execute 'update public.settings set soon_at = nullif(soon_count, 0)';
+    alter table public.settings drop column soon_count;
+  end if;
+end $$;
 
 create table if not exists private.secrets (
   id            int primary key default 1 check (id = 1),
@@ -239,16 +250,18 @@ language plpgsql stable set search_path = '' as $$
 declare
   s public.settings;
   link text := '';
+  n_ahead int := private.ahead(e.day, e.sort_key);
 begin
   select * into s from public.settings where id = 1;
   if e.token is not null and s.site_url <> '' then
     link := rtrim(s.site_url, '/') || '/s/' || e.token;
   end if;
-  return replace(replace(replace(replace(replace(replace(p_tpl,
+  return replace(replace(replace(replace(replace(replace(replace(p_tpl,
     '{매장}', s.store_name),
     '{번호}', e.no::text),
     '{인원}', (e.adults + e.kids)::text),
-    '{앞팀}', private.ahead(e.day, e.sort_key)::text),
+    '{순서안내}', case when n_ahead = 0 then '다음 순서입니다' else '앞 대기 ' || n_ahead || '팀 남았습니다' end),
+    '{앞팀}', n_ahead::text),
     '{제한분}', s.noshow_minutes::text),
     '{링크}', link);
 end $$;
@@ -324,13 +337,13 @@ declare
   r record;
 begin
   select * into s from public.settings where id = 1;
-  if s.soon_count <= 0 or not s.sms_enabled then return; end if;
+  if s.soon_at is null or not s.sms_enabled then return; end if;
   for r in
     select id, sort_key from public.entries
      where day = p_day and status = 'waiting' and not soon_sent and phone is not null
      order by sort_key
   loop
-    exit when private.ahead(p_day, r.sort_key) > s.soon_count;
+    exit when private.ahead(p_day, r.sort_key) > s.soon_at;
     update public.entries set soon_sent = true where id = r.id;
     perform private.send_entry_sms(r.id, 'soon');
   end loop;
@@ -433,7 +446,7 @@ begin
   select * into s from public.settings where id = 1;
   n_ahead := private.ahead(d, e.sort_key);
   -- 접수 문자에 앞 팀 수가 이미 들어가므로, 처음부터 조건을 만족하면 '앞 대기 알림' 문자는 생략
-  if s.soon_count > 0 and n_ahead <= s.soon_count then
+  if s.soon_at is not null and n_ahead <= s.soon_at then
     update public.entries set soon_sent = true where id = e.id;
   end if;
   perform private.send_entry_sms(e.id, 'register');

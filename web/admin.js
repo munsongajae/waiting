@@ -407,7 +407,7 @@ function sampleText(tpl, s) {
   const base = (s.site_url || location.origin).replace(/\/$/, '');
   return tpl
     .replaceAll('{매장}', s.store_name).replaceAll('{번호}', '12').replaceAll('{인원}', '2')
-    .replaceAll('{앞팀}', '3').replaceAll('{제한분}', String(s.noshow_minutes)).replaceAll('{링크}', `${base}/s/abcdEFGH`);
+    .replaceAll('{순서안내}', '앞 대기 1팀 남았습니다').replaceAll('{앞팀}', '3').replaceAll('{제한분}', String(s.noshow_minutes)).replaceAll('{링크}', `${base}/s/abcdEFGH`);
 }
 
 function bytesLabel(n) { return `${n}/90바이트${n > 90 ? ' · 장문(LMS) 요금' : ''}`; }
@@ -445,14 +445,15 @@ function settingsHtml() {
         <label class="check field field-wide"><input type="checkbox" name="sms_enabled" ${s.sms_enabled ? 'checked' : ''}><span>문자 보내기<small>접수 완료·호출 문자를 솔라피로 보냅니다. 아래에 API 키와 발신번호가 있어야 합니다.</small></span></label>
         <label class="field"><span>발신번호 (솔라피에 등록한 번호)</span><input name="sms_from" inputmode="tel" value="${esc(s.sms_from)}" placeholder="0212345678"></label>
         <label class="field"><span>'앞 대기 알림' 문자</span>
-          <select name="soon_count">
-            ${[0, 1, 2, 3, 4, 5].map(n => `<option value="${n}" ${s.soon_count === n ? 'selected' : ''}>${n ? `앞 대기 ${n}팀 이하일 때` : '보내지 않음'}</option>`).join('')}
+          <select name="soon_at">
+            ${[['', '보내지 않음'], [0, '다음 차례일 때 (앞 대기 0팀)'], ...[1, 2, 3, 4, 5].map(n => [n, `앞 대기 ${n}팀 이하일 때`])]
+              .map(([v, label]) => `<option value="${v}" ${String(s.soon_at ?? '') === String(v) ? 'selected' : ''}>${label}</option>`).join('')}
           </select>
         </label>
         <label class="field field-wide"><span>사이트 주소 (순서 확인 링크에 들어감)</span><input name="site_url" inputmode="url" value="${esc(s.site_url || location.origin)}"><small>지금 이 화면의 주소가 기본값입니다. 도메인을 바꾸면 여기도 바꿔 주세요.</small></label>
         <label class="field field-wide"><span>메뉴판 주소 (선택)</span><input name="menu_url" inputmode="url" value="${esc(s.menu_url || '')}" placeholder="https://"><small>손님의 순서 확인 화면에 '메뉴 미리 보기' 버튼으로 나옵니다. 비워 두면 버튼이 숨겨집니다. 문자에는 들어가지 않아 문자비가 늘지 않습니다.</small></label>
         ${tplField('tpl_register', '접수 완료 문자', '사용 가능: {매장} {번호} {인원} {앞팀} {링크} {제한분} — 바이트는 예시 값으로 계산합니다.')}
-        ${tplField('tpl_soon', '앞 대기 알림 문자', '{앞팀}에는 보내는 시점의 남은 팀 수가 들어갑니다.')}
+        ${tplField('tpl_soon', '앞 대기 알림 문자', '{순서안내}는 남은 팀 수에 따라 "앞 대기 N팀 남았습니다" 또는 "다음 순서입니다"로 바뀝니다.')}
         ${tplField('tpl_call', '입장 호출 문자')}
       </fieldset>
       <div class="form-footer"><button type="submit" class="btn btn-primary btn-lg">설정 저장</button></div>
@@ -707,7 +708,7 @@ document.addEventListener('submit', async ev => {
       auto_estimate: f.get('auto_estimate') === 'on',
       sms_enabled: f.get('sms_enabled') === 'on',
       sms_from: String(f.get('sms_from')).replace(/\D/g, ''),
-      soon_count: num('soon_count', 0, 5),
+      soon_at: f.get('soon_at') === '' ? null : num('soon_at', 0, 5),
       site_url: String(f.get('site_url')).trim().replace(/\/$/, ''),
       menu_url: String(f.get('menu_url')).trim(),
       tpl_register: String(f.get('tpl_register')),
