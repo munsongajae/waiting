@@ -341,7 +341,7 @@ document.addEventListener('click', ev => {
   actions[el.dataset.action]?.(el, ev);
 });
 
-// 오른쪽 아래 톱니바퀴(또는 매장 이름)를 2초 길게 누르면 태블릿 메뉴 — 짧게 누르면 반응 없음 (손님이 우연히 열지 않도록)
+// 왼쪽 아래 톱니바퀴(또는 매장 이름)를 2초 길게 누르면 태블릿 메뉴 — 짧게 누르면 반응 없음 (손님이 우연히 열지 않도록)
 let pressTimer = null;
 document.addEventListener('pointerdown', ev => {
   if (!ev.target.closest('[data-longpress="menu"]')) return;
