@@ -90,6 +90,7 @@ function render() {
   };
   app.innerHTML = views[ui.view]();
   app.dataset.view = ui.view;
+  if (ui.view === 'login') focusLogin();
 }
 
 /* ---------- 화면 ---------- */

@@ -183,14 +183,28 @@ function setupNeededHtml() {
   </main>`;
 }
 
+// 입구·관리자 화면별로 마지막 로그인 이메일을 기억 (비밀번호는 저장하지 않고 브라우저 비밀번호 관리자에 맡김)
+const EMAIL_KEY = `waiting.email:${location.pathname.includes('admin') ? 'admin' : 'kiosk'}`;
+
+function savedEmail() {
+  try { return localStorage.getItem(EMAIL_KEY) || ''; } catch (_) { return ''; }
+}
+
+// 한 번이라도 로그인했는지 — 처음에는 '아이디 저장'을 기본으로 체크, 이후에는 마지막 선택을 따름
+function localStorageUsed() {
+  try { return localStorage.getItem('waiting.emailPref') === '1'; } catch (_) { return false; }
+}
+
 function loginHtml(title, hint, error) {
+  const email = savedEmail();
   return `
   <main class="screen center-screen">
     <form class="card narrow login" data-form="login" autocomplete="on">
       <h2>${esc(title)}</h2>
       <p class="muted">${hint}</p>
-      <label class="field"><span>이메일</span><input name="email" type="email" autocomplete="username" required></label>
-      <label class="field"><span>비밀번호</span><input name="password" type="password" autocomplete="current-password" required></label>
+      <label class="field"><span>이메일</span><input id="login-email" name="email" type="email" autocomplete="username" value="${esc(email)}" required></label>
+      <label class="field"><span>비밀번호</span><input id="login-password" name="password" type="password" autocomplete="current-password" required></label>
+      <label class="check remember"><input type="checkbox" name="remember" ${email || !localStorageUsed() ? 'checked' : ''}><span>아이디 저장</span></label>
       <p class="form-error">${error ? esc(error) : ''}</p>
       <button class="btn btn-primary btn-lg" type="submit">로그인</button>
     </form>
@@ -208,19 +222,36 @@ function noRoleHtml(message) {
   </main>`;
 }
 
+// 저장된 이메일이 있으면 비밀번호 칸에 바로 커서 (화면을 그린 직후 호출)
+function focusLogin() {
+  const f = document.querySelector('form[data-form="login"]');
+  if (f && f.email.value) f.password.focus();
+}
+
 // 로그인 폼 처리. 성공하면 onDone() 호출
 function bindLogin(container, onDone) {
   container.addEventListener('submit', async ev => {
     if (ev.target.dataset.form !== 'login') return;
     ev.preventDefault();
     const f = new FormData(ev.target);
+    const email = String(f.get('email')).trim();
+    const password = String(f.get('password'));
     const btn = ev.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    const { error } = await sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: String(f.get('password')) });
+    const { error } = await sb.auth.signInWithPassword({ email, password });
     btn.disabled = false;
     if (error) {
       ev.target.querySelector('.form-error').textContent = friendlyError(error);
       return;
+    }
+    try {
+      localStorage.setItem('waiting.emailPref', '1');
+      if (f.get('remember')) localStorage.setItem(EMAIL_KEY, email);
+      else localStorage.removeItem(EMAIL_KEY);
+    } catch (_) { /* 저장공간을 쓸 수 없으면 기억하지 않음 */ }
+    // 크롬 등에서 "비밀번호를 저장할까요?"를 띄움 — 저장 여부는 사용자가 결정하고, 비밀번호는 브라우저가 암호화해 보관
+    if (window.PasswordCredential && navigator.credentials) {
+      navigator.credentials.store(new PasswordCredential({ id: email, password, name: email })).catch(() => {});
     }
     onDone();
   });

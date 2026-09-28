@@ -124,6 +124,7 @@ function render() {
       norole: () => noRoleHtml(ui.noRoleMessage),
     };
     app.innerHTML = views[ui.view]();
+    if (ui.view === 'login') focusLogin();
     return;
   }
   // 설정 탭은 입력 중인 내용이 지워지지 않도록 본문을 다시 그리지 않음

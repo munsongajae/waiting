@@ -72,6 +72,8 @@ button:disabled { cursor: default; }
 .narrow { width: min(480px, 100%); display: flex; flex-direction: column; gap: 14px; }
 .narrow h2 { margin: 0; font-size: 26px; }
 .narrow p { margin: 0; line-height: 1.6; }
+.remember { display: flex; gap: 10px; font-size: 17px; font-weight: 600; align-items: center; cursor: pointer; }
+.remember input { margin: 0; }
 .form-error { color: var(--red); font-weight: 600; min-height: 1.2em; margin: 0; }
 
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
