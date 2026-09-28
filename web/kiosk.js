@@ -139,6 +139,9 @@ function viewHome() {
       ${s.waiting ? `<p class="est-note">${EST_NOTE}</p>` : ''}
       ${action}
     </section>
+    <button class="kiosk-gear" data-longpress="menu" aria-label="태블릿 메뉴 (2초 길게 누르기)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm7.4-2.5a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.3-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6z" fill="currentColor"/></svg>
+    </button>
   </main>`;
 }
 
@@ -338,13 +341,16 @@ document.addEventListener('click', ev => {
   actions[el.dataset.action]?.(el, ev);
 });
 
-// 매장 이름을 3초 길게 누르면 태블릿 메뉴 (손님이 우연히 열지 않도록 숨김)
+// 오른쪽 아래 톱니바퀴(또는 매장 이름)를 2초 길게 누르면 태블릿 메뉴 — 짧게 누르면 반응 없음 (손님이 우연히 열지 않도록)
 let pressTimer = null;
 document.addEventListener('pointerdown', ev => {
   if (!ev.target.closest('[data-longpress="menu"]')) return;
-  pressTimer = setTimeout(openMenu, 3000);
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(openMenu, 2000);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => document.addEventListener(t, () => clearTimeout(pressTimer)));
+// 길게 누를 때 안드로이드 기본 메뉴(복사·선택 등)가 뜨지 않도록
+document.addEventListener('contextmenu', ev => ev.preventDefault());
 
 if (IS_CONFIGURED) bindLogin(app, () => { ui.loginError = ''; boot(); });
 boot();

@@ -139,6 +139,14 @@ button:disabled { cursor: default; }
   padding: 40px 24px; text-align: center; font-size: 26px; font-weight: 700; line-height: 1.5;
 }
 
+.kiosk-gear {
+  position: absolute; right: 12px; bottom: 12px; width: 60px; height: 60px;
+  display: grid; place-items: center; color: var(--muted); opacity: .35; border-radius: 50%;
+  -webkit-touch-callout: none;
+}
+.kiosk-gear:active { opacity: .7; background: var(--bg-2); }
+.kiosk-gear svg { width: 28px; height: 28px; pointer-events: none; }
+
 /* ---------- 입구: 접수 단계 ---------- */
 
 .flow { display: flex; flex-direction: column; gap: 20px; }
