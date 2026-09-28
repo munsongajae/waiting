@@ -94,12 +94,6 @@ function render() {
 
 /* ---------- 화면 ---------- */
 
-const bowlIcon = `<svg class="bowl" viewBox="0 0 512 512" aria-hidden="true">
-  <path d="M96 250h320c0 96-72 164-160 164S96 346 96 250z" fill="currentColor"/>
-  <path d="M256 96c-14 30-14 70 0 110 14-40 14-80 0-110z" fill="var(--green)"/>
-  <path d="M256 150c-30-8-58 0-76 20 30 8 58 0 76-20zM256 150c30-8 58 0 76 20-30 8-58 0-76-20z" fill="var(--green)"/>
-</svg>`;
-
 function viewHome() {
   const s = ui.summary || { store_name: '그리운보리밥', waiting: 0, est_minutes: 0, calling: [] };
   const calling = s.calling || [];
@@ -115,8 +109,7 @@ function viewHome() {
   return `
   <main class="screen home">
     <section class="home-brand">
-      ${bowlIcon}
-      <h1 class="store" data-longpress="menu">${esc(s.store_name)}</h1>
+      <h1 class="logo-card" data-longpress="menu"><img src="/logo.gif" alt="${esc(s.store_name)}" draggable="false"></h1>
       <p class="tagline">방문해 주셔서 감사합니다</p>
     </section>
     <section class="home-panel">

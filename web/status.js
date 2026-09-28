@@ -72,7 +72,7 @@ function render() {
   app.innerHTML = `
     <main class="status-page">
       <div class="status-card ${i.status}">
-        <p class="status-store">${esc(i.store_name)}</p>
+        <img class="status-logo" src="/logo.gif" alt="${esc(i.store_name)}">
         <div class="status-no"><b>${i.no}</b><span>번</span></div>
         <p class="status-party">${i.party}명</p>
         ${body}

@@ -93,12 +93,13 @@ button:disabled { cursor: default; }
   background: radial-gradient(1200px 600px at -10% 110%, var(--bg-2), transparent 60%), var(--bg);
 }
 .home-brand { text-align: center; }
-.bowl { width: clamp(120px, 18vw, 220px); color: var(--brown); }
-.store {
-  font-family: var(--serif); font-weight: 700;
-  font-size: clamp(44px, 6.4vw, 88px); line-height: 1.1; margin: 12px 0 8px;
-  color: var(--brown); letter-spacing: -.02em; word-break: keep-all;
+/* 로고 원본이 흰 배경이라 흰 카드 위에 올림 */
+.logo-card {
+  display: inline-block; margin: 0 0 16px; padding: clamp(20px, 3vw, 36px) clamp(28px, 4vw, 48px);
+  background: #fff; border-radius: 28px; box-shadow: var(--shadow); line-height: 0;
+  -webkit-touch-callout: none;
 }
+.logo-card img { width: clamp(240px, 30vw, 400px); height: auto; user-select: none; -webkit-user-drag: none; }
 .tagline { color: var(--muted); font-size: clamp(18px, 2vw, 24px); margin: 0; }
 
 .home-panel { display: flex; flex-direction: column; gap: 20px; align-items: stretch; }
@@ -357,10 +358,10 @@ button:disabled { cursor: default; }
 
 .status-body { background: var(--bg); }
 .status-page { min-height: 100dvh; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-.status-card { width: min(440px, 100%); background: var(--card); border-radius: 28px; box-shadow: var(--shadow); padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.status-card { width: min(440px, 100%); background: #fff; border-radius: 28px; box-shadow: var(--shadow); padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .status-card h1 { font-size: 22px; margin: 0; }
 .status-card p { margin: 0; line-height: 1.6; }
-.status-store { font-family: var(--serif); font-size: 22px; color: var(--brown); font-weight: 700; }
+.status-logo { width: 180px; height: auto; margin-bottom: 4px; }
 .status-no { display: flex; align-items: baseline; color: var(--brown); line-height: 1; }
 .status-no b { font-size: 112px; font-weight: 800; letter-spacing: -.04em; }
 .status-no span { font-size: 32px; font-weight: 700; }
