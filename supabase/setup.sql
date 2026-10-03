@@ -81,7 +81,7 @@ create table if not exists public.entries (
   id          uuid primary key default gen_random_uuid(),
   day         date not null default private.kst_today(),
   no          int  not null,
-  sort_key    double precision not null,  -- 대기 순서 (지금은 번호와 같음, 순서 조정 기능을 위해 분리해 둠)
+  sort_key    double precision not null,  -- 대기 순서 (직원이 순서를 바꾸면 번호와 달라짐)
   adults      int  not null check (adults between 1 and 30),
   kids        int  not null default 0 check (kids between 0 and 30),
   phone       text,
@@ -500,6 +500,51 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- 직원의 대기 순서 조정: top = 맨 위로 올리기, down = 바로 뒤 팀과 순서 바꾸기(한 칸 미루기)
+create or replace function public.entry_move(p_id uuid, p_dir text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  e public.entries;
+  k1 double precision;
+  k2 double precision;
+begin
+  perform private.require_role('owner', 'staff');
+  select * into e from public.entries where id = p_id for update;
+  if not found or e.status not in ('waiting', 'called') then
+    raise exception '대기 중인 손님만 순서를 바꿀 수 있습니다';
+  end if;
+
+  if p_dir = 'top' then
+    select min(sort_key) into k1 from public.entries
+     where day = e.day and status in ('waiting', 'called') and id <> e.id;
+    if k1 is null or e.sort_key < k1 then
+      raise exception '이미 맨 위입니다';
+    end if;
+    update public.entries set sort_key = k1 - 1 where id = e.id;
+  elsif p_dir = 'down' then
+    select sort_key into k1 from public.entries
+     where day = e.day and status in ('waiting', 'called') and sort_key > e.sort_key
+     order by sort_key limit 1;
+    if k1 is null then
+      raise exception '이미 맨 뒤입니다';
+    end if;
+    select sort_key into k2 from public.entries
+     where day = e.day and status in ('waiting', 'called') and sort_key > k1
+     order by sort_key limit 1;
+    -- 새 순서값은 항상 다음 정수보다 작게 유지 (앞으로 접수될 번호와 겹치지 않도록)
+    update public.entries
+       set sort_key = case when k2 is null then (k1 + floor(k1) + 1) / 2 else (k1 + k2) / 2 end,
+           postponed = postponed + 1
+     where id = e.id;
+  else
+    raise exception '알 수 없는 동작입니다: %', p_dir;
+  end if;
+
+  -- 순서가 바뀌어 앞 대기 알림 조건을 새로 만족한 손님에게 문자
+  perform private.check_soon(e.day);
+  return jsonb_build_object('ok', true);
+end $$;
+
 create or replace function public.set_paused(p_paused boolean) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
@@ -719,6 +764,7 @@ grant execute on function
   public.queue_summary(),
   public.register_entry(int, int, text),
   public.entry_action(uuid, text),
+  public.entry_move(uuid, text),
   public.set_paused(boolean),
   public.sync_sms(),
   public.set_sms_keys(text, text),

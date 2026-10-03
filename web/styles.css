@@ -390,6 +390,8 @@ button:disabled { cursor: default; }
 .modal-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 .modal-actions .btn-lg { min-height: 60px; font-size: 19px; padding: 0 22px; }
+.modal-actions.stack { flex-direction: column; align-items: stretch; }
+.modal-actions.stack .btn-lg { width: 100%; }
 
 #toasts {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;

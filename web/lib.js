@@ -90,8 +90,8 @@ function toast(msg, opts = {}) {
   setTimeout(() => el.remove(), ms + 500);
 }
 
-// buttons: [{ label, cls, value }] — 누른 버튼의 value로 resolve
-function modal({ title, message, body, buttons }) {
+// buttons: [{ label, cls, value }] — 누른 버튼의 value로 resolve. stack: 버튼을 세로로 한 줄씩
+function modal({ title, message, body, buttons, stack }) {
   let root = document.getElementById('modal-root');
   if (!root) {
     root = document.createElement('div');
@@ -105,7 +105,7 @@ function modal({ title, message, body, buttons }) {
           ${title ? `<h3>${title}</h3>` : ''}
           ${message ? `<p>${message}</p>` : ''}
           ${body || ''}
-          <div class="modal-actions">
+          <div class="modal-actions${stack ? ' stack' : ''}">
             ${buttons.map((b, i) => `<button type="button" class="btn ${b.cls || 'btn-outline'} btn-lg" data-modal="${i}">${b.label}</button>`).join('')}
           </div>
         </div>

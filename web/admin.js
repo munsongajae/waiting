@@ -207,6 +207,7 @@ function activeHtml() {
           ${e.status === 'called' ? `<span class="called-badge">${overdue ? `호출 후 ${minsSince(e.called_at)}분 · 미도착` : `호출 ${e.call_count}회 · ${minsSince(e.called_at)}분 전`}</span>` : ''}
           ${e.kids ? `<span>어린이 ${e.kids}</span>` : ''}
           ${e.source === 'staff' ? '<span class="chip">직원 등록</span>' : ''}
+          ${e.sort_key !== e.no ? '<span class="chip warn">순서 변경</span>' : ''}
           ${smsBadge(e)}
         </div>
       </div>
@@ -533,13 +534,14 @@ function rerenderSettingsPart(part) {
 async function act(id, action) {
   const e = findEntry(id);
   try {
-    await rpc('entry_action', { p_id: id, p_action: action });
+    if (action === 'top' || action === 'down') await rpc('entry_move', { p_id: id, p_dir: action });
+    else await rpc('entry_action', { p_id: id, p_action: action });
   } catch (err) {
     toast(err.message, 'error');
     refresh();
     return;
   }
-  const label = { call: '호출', seat: '입장 처리', cancel: '취소 처리', noshow: '노쇼 처리', restore: '대기로 되돌림' }[action];
+  const label = { call: '호출', seat: '입장 처리', cancel: '취소 처리', noshow: '노쇼 처리', restore: '대기로 되돌림', top: '맨 위로 올림', down: '한 칸 미룸' }[action];
   if (['seat', 'cancel', 'noshow'].includes(action)) {
     toast(`${e?.no}번 ${label}`, { action: { label: '되돌리기', fn: () => act(id, 'restore') } });
   } else {
@@ -551,10 +553,18 @@ async function act(id, action) {
 async function openEntryMenu(id) {
   const e = findEntry(id);
   if (!e) return;
-  const buttons = [{ label: '닫기', value: null }];
+  const list = activeList();
+  const buttons = [];
+  if (list[0]?.id !== id) buttons.push({ label: '⤒ 맨 위로 올리기', value: 'top' });
+  if (list[list.length - 1]?.id !== id) buttons.push({ label: '↓ 한 칸 미루기', value: 'down' });
   if (e.status === 'called') buttons.push({ label: '재호출', value: 'call' });
-  buttons.push({ label: '노쇼', value: 'noshow' }, { label: '손님 요청 취소', cls: 'btn-danger', value: 'cancel' });
+  buttons.push(
+    { label: '노쇼', value: 'noshow' },
+    { label: '손님 요청 취소', cls: 'btn-danger', value: 'cancel' },
+    { label: '닫기', cls: 'btn-ghost', value: null },
+  );
   const v = await modal({
+    stack: true,
     title: `${e.no}번 · ${party(e)}명`,
     message: `${e.phone ? fmtPhone(e.phone) : '번호 없음'} · ${fmtTime(e.created_at)} 접수${e.kids ? ` · 어린이 ${e.kids}명` : ''}`,
     buttons,
